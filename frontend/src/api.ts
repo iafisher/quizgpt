@@ -24,6 +24,10 @@ export async function getSubject(subjectId: IdType): Promise<Subject> {
     return EXAMPLE_SUBJECT;
 }
 
+export async function createSubject(name: string, description: string, instructions: string): Promise<Subject> {
+    return EXAMPLE_SUBJECT;
+}
+
 const EXAMPLE_QUIZ_QUESTIONS = [
     {
         text: "Give a brief overview of the economy in the 1970s.",

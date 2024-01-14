@@ -19,5 +19,17 @@ onMounted(async () => {
       <v-card-title>{{ subject.name }}</v-card-title>
       <v-card-text>{{ subject.description }}</v-card-text>
     </v-card>
+    <v-card variant="outlined" href="/create">
+      <v-card-title>
+        <v-icon icon="mdi-plus"></v-icon>
+        Create your own
+      </v-card-title>
+    </v-card>
   </main>
 </template>
+
+<style scoped>
+.v-card {
+  margin-top: 32px;
+}
+</style>
