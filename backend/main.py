@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+import quiz_service
 import storage
 
 app = FastAPI()
@@ -49,9 +50,16 @@ def create_subject(subject: SubjectCreate, db: Session = Depends(get_db)):
     return dict(created=subject_to_json(db_subject))
 
 
+class QuizGenerate(BaseModel):
+    subject_id: int
+
+
 @app.post("/quizzes/generate")
-def generate_quiz():
-    raise NotImplementedError
+def generate_quiz(request: QuizGenerate, db: Session = Depends(get_db)):
+    # TODO: handle missing subject
+    db_subject = db.query(storage.Subject).filter(storage.Subject.subject_id == request.subject_id).first()
+    questions = quiz_service.generate(db_subject.instructions)
+    return dict(questions=[dict(text=text) for text in questions])
 
 
 @app.post("/quizzes/grade")

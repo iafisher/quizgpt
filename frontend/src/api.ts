@@ -24,7 +24,8 @@ export async function getSubject(subjectId: IdType): Promise<Subject> {
 }
 
 export async function createSubject(name: string, description: string, instructions: string): Promise<Subject> {
-    const response = await axios.post(BACKEND_URL + "/subjects/create", { name, description, instructions });
+    // TODO: handle API error
+    const response = await axios.post(BACKEND_URL + "/subjects/create", {name, description, instructions});
     return response.data.created;
 }
 
@@ -48,10 +49,10 @@ export interface Quiz {
     questions: Question[];
 }
 
-export async function generateQuiz(): Promise<Quiz> {
-    return {
-        questions: EXAMPLE_QUIZ_QUESTIONS,
-    };
+export async function generateQuiz(subjectId: IdType): Promise<Quiz> {
+    // TODO: handle API error
+    const response = await axios.post(BACKEND_URL + "/quizzes/generate", {subject_id: subjectId});
+    return response.data;
 }
 
 const EXAMPLE_COMMENTS = [
@@ -80,5 +81,5 @@ export async function gradeQuiz(quiz: Quiz, answers: string[]): Promise<GradedQu
         });
     }
 
-    return { results };
+    return {results};
 }

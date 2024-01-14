@@ -15,7 +15,7 @@ onMounted(async () => {
 });
 
 async function startQuiz() {
-  quiz.value = await api.generateQuiz();
+  quiz.value = await api.generateQuiz(props.subjectId);
   quizStarted.value = true;
 }
 </script>
