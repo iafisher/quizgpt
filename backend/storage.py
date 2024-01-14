@@ -19,10 +19,12 @@ class Subject(Base):
     subject_id = Column(Integer, primary_key=True)
     name = Column(String)
     description = Column(String)
+    instructions = Column(String)
 
     def to_json(self) -> dict:
         return dict(
             subjectId=self.subject_id,
             name=self.name,
             description=self.description,
+            instructions=self.instructions,
         )

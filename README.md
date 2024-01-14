@@ -3,7 +3,7 @@ To run the backend server:
 ```shell
 $ cd backend
 $ source .venv/bin/activate
-$ uvicorn main:app --reload
+$ uvicorn main:app --reload --port 5757
 ```
 
 To serve the frontend:

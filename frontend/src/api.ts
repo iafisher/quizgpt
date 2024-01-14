@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export type IdType = number;
 
 export interface Subject {
@@ -6,26 +8,24 @@ export interface Subject {
     description: string;
 }
 
-const EXAMPLE_SUBJECT = {
-    subjectId: 1,
-    name: "Postwar American history",
-    description: "The domestic history of the United States from 1945 to 1990"
-};
+// TODO: make port configurable
+const BACKEND_URL = "http://localhost:5757";
 
 export async function getSubjectList(): Promise<Subject[]> {
-    return [EXAMPLE_SUBJECT];
+    // TODO: handle API error
+    const response = await axios.get(BACKEND_URL + "/subjects/list");
+    return response.data.subjects;
 }
 
 export async function getSubject(subjectId: IdType): Promise<Subject> {
-    if (subjectId !== 1) {
-        throw "unknown subject ID";
-    }
-
-    return EXAMPLE_SUBJECT;
+    // TODO: handle API error
+    const response = await axios.get(BACKEND_URL + `/subjects/get/${subjectId}`);
+    return response.data;
 }
 
 export async function createSubject(name: string, description: string, instructions: string): Promise<Subject> {
-    return EXAMPLE_SUBJECT;
+    const response = await axios.post(BACKEND_URL + "/subjects/create", { name, description, instructions });
+    return response.data.created;
 }
 
 const EXAMPLE_QUIZ_QUESTIONS = [

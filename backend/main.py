@@ -1,10 +1,17 @@
 from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 import storage
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def get_db():
@@ -30,15 +37,16 @@ def get_subject(subject_id: int, db: Session = Depends(get_db)):
 class SubjectCreate(BaseModel):
     name: str
     description: str
+    instructions: str
 
 
 @app.post("/subjects/create")
 def create_subject(subject: SubjectCreate, db: Session = Depends(get_db)):
-    db_subject = storage.Subject(name=subject.name, description=subject.description)
+    db_subject = storage.Subject(name=subject.name, description=subject.description, instructions=subject.instructions)
     db.add(db_subject)
     db.commit()
     db.refresh(db_subject)
-    return subject_to_json(db_subject)
+    return dict(created=subject_to_json(db_subject))
 
 
 @app.post("/quizzes/generate")
@@ -56,4 +64,5 @@ def subject_to_json(subject) -> dict:
         subjectId=subject.subject_id,
         name=subject.name,
         description=subject.description,
+        instructions=subject.instructions,
     )
