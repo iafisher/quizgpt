@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 import storage
@@ -24,6 +25,20 @@ def get_subject_list(db: Session = Depends(get_db)):
 def get_subject(subject_id: int, db: Session = Depends(get_db)):
     subject = db.query(storage.Subject).filter(storage.Subject.subject_id == subject_id).first()
     return subject_to_json(subject)
+
+
+class SubjectCreate(BaseModel):
+    name: str
+    description: str
+
+
+@app.post("/subjects/create")
+def create_subject(subject: SubjectCreate, db: Session = Depends(get_db)):
+    db_subject = storage.Subject(name=subject.name, description=subject.description)
+    db.add(db_subject)
+    db.commit()
+    db.refresh(db_subject)
+    return subject_to_json(db_subject)
 
 
 @app.post("/quizzes/generate")
