@@ -3,6 +3,7 @@ To run the backend server:
 ```shell
 $ cd backend
 $ source .venv/bin/activate
+$ uvicorn main:app --reload
 ```
 
 To serve the frontend:

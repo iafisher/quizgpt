@@ -3,6 +3,7 @@
 .idea
 *.swp
 *~
+*.sqlite3
 
 # Python
 *.pyo
