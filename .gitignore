@@ -1,0 +1,17 @@
+# Generic
+.DS_Store
+.idea
+*.swp
+*~
+
+# Python
+*.pyo
+*.pyc
+__pycache__
+.mypy_cache
+.venv
+/dist
+*.egg-info
+
+# JavaScript
+node_modules/
