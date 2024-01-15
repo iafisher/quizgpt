@@ -4,7 +4,7 @@ import {ref} from "vue";
 import * as api from '../api';
 import QuizQuestion from "@/components/QuizQuestion.vue";
 
-const props = defineProps(["quiz"]);
+const props = defineProps(["quiz", "subject"]);
 
 const empty = [];
 for (const _ of props.quiz.questions) {
@@ -17,7 +17,7 @@ const submitted = ref(false);
 
 async function submitQuiz() {
   // TODO: loading animation while grading quiz
-  const gradedQuiz = await api.gradeQuiz(props.quiz, answers.value);
+  const gradedQuiz = await api.gradeQuiz(props.subject.name, props.quiz, answers.value);
 
   for (let i = 0; i < gradedQuiz.results.length; i++) {
     const result = gradedQuiz.results[i];

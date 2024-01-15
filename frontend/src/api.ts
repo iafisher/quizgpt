@@ -71,15 +71,9 @@ export interface GradedQuiz {
     results: QuestionResult[];
 }
 
-export async function gradeQuiz(quiz: Quiz, answers: string[]): Promise<GradedQuiz> {
-    const results = [];
-    for (let i = 0; i < answers.length; i++) {
-        results.push({
-            text: quiz.questions[i].text,
-            answer: answers[i],
-            comment: EXAMPLE_COMMENTS[i]
-        });
-    }
-
-    return {results};
+export async function gradeQuiz(subject: string, quiz: Quiz, answers: string[]): Promise<GradedQuiz> {
+    // TODO: handle API error
+    const questions = quiz.questions.map(q => q.text);
+    const response = await axios.post(BACKEND_URL + "/quizzes/grade", {subject, questions, answers});
+    return response.data;
 }

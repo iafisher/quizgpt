@@ -30,7 +30,7 @@ async function startQuiz() {
         <v-btn @click="startQuiz" variant="outlined">Start a new quiz</v-btn>
       </template>
       <template v-else>
-        <Quiz :quiz="quiz" />
+        <Quiz :subject="subject" :quiz="quiz" />
       </template>
     </template>
     <template v-else>

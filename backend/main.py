@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -31,7 +33,11 @@ def get_subject_list(db: Session = Depends(get_db)):
 
 @app.get("/subjects/get/{subject_id}")
 def get_subject(subject_id: int, db: Session = Depends(get_db)):
-    subject = db.query(storage.Subject).filter(storage.Subject.subject_id == subject_id).first()
+    subject = (
+        db.query(storage.Subject)
+        .filter(storage.Subject.subject_id == subject_id)
+        .first()
+    )
     return subject_to_json(subject)
 
 
@@ -43,7 +49,11 @@ class SubjectCreate(BaseModel):
 
 @app.post("/subjects/create")
 def create_subject(subject: SubjectCreate, db: Session = Depends(get_db)):
-    db_subject = storage.Subject(name=subject.name, description=subject.description, instructions=subject.instructions)
+    db_subject = storage.Subject(
+        name=subject.name,
+        description=subject.description,
+        instructions=subject.instructions,
+    )
     db.add(db_subject)
     db.commit()
     db.refresh(db_subject)
@@ -57,14 +67,33 @@ class QuizGenerate(BaseModel):
 @app.post("/quizzes/generate")
 def generate_quiz(request: QuizGenerate, db: Session = Depends(get_db)):
     # TODO: handle missing subject
-    db_subject = db.query(storage.Subject).filter(storage.Subject.subject_id == request.subject_id).first()
+    db_subject = (
+        db.query(storage.Subject)
+        .filter(storage.Subject.subject_id == request.subject_id)
+        .first()
+    )
     questions = quiz_service.generate(db_subject.instructions)
     return dict(questions=[dict(text=text) for text in questions])
 
 
+class QuizGrade(BaseModel):
+    subject: str
+    questions: List[str]
+    answers: List[str]
+
+
 @app.post("/quizzes/grade")
-def grade_quiz():
-    raise NotImplementedError
+def grade_quiz(request: QuizGrade):
+    responses = quiz_service.grade(request.subject, request.questions, request.answers)
+    results = [
+        dict(
+            text=request.questions[i],
+            answer=request.answers[i],
+            comment=responses[i],
+        )
+        for i in range(len(responses))
+    ]
+    return dict(results=results)
 
 
 def subject_to_json(subject) -> dict:
