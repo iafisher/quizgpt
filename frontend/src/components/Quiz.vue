@@ -2,6 +2,7 @@
 import {ref} from "vue";
 
 import * as api from '../api';
+import Loading from "@/components/Loading.vue";
 import QuizQuestion from "@/components/QuizQuestion.vue";
 
 const props = defineProps(["quiz", "subject"]);
@@ -14,10 +15,12 @@ for (const _ of props.quiz.questions) {
 const answers = ref(empty.slice());
 const comments = ref(empty.slice());
 const submitted = ref(false);
+const loading = ref(false);
 
 async function submitQuiz() {
-  // TODO: loading animation while grading quiz
+  loading.value = true;
   const gradedQuiz = await api.gradeQuiz(props.subject.name, props.quiz, answers.value);
+  loading.value = false;
 
   for (let i = 0; i < gradedQuiz.results.length; i++) {
     const result = gradedQuiz.results[i];
@@ -33,6 +36,6 @@ async function submitQuiz() {
     <QuizQuestion v-for="(question, i) in props.quiz.questions" :key="i" v-model="answers[i]" :submitted="submitted"
                   :question="question" :comment="comments[i]"/>
     <v-btn v-if="!submitted" variant="outlined" @click="submitQuiz">Submit</v-btn>
-    <!-- TODO: button to generate another quiz after submitted -->
+    <Loading :show="loading" />
   </div>
 </template>

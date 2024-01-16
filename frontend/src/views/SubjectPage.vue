@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 
 import * as api from '../api';
+import Loading from "@/components/Loading.vue";
 import Quiz from "@/components/Quiz.vue";
 
 const props = defineProps(['subjectId']);
@@ -9,13 +10,18 @@ const props = defineProps(['subjectId']);
 const subject = ref<api.Subject|null>(null);
 const quizStarted = ref(false);
 const quiz = ref<api.Quiz|null>(null);
+const loading = ref(false);
 
 onMounted(async () => {
+  loading.value = true;
   subject.value = await api.getSubject(parseInt(props.subjectId));
+  loading.value = false;
 });
 
 async function startQuiz() {
+  loading.value = true;
   quiz.value = await api.generateQuiz(props.subjectId);
+  loading.value = false;
   quizStarted.value = true;
 }
 </script>
@@ -33,9 +39,6 @@ async function startQuiz() {
         <Quiz :subject="subject" :quiz="quiz" />
       </template>
     </template>
-    <template v-else>
-      <!-- TODO: loading animation -->
-      Loading...
-    </template>
+    <Loading :show="loading" />
   </main>
 </template>

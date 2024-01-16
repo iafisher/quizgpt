@@ -3,8 +3,10 @@ import {ref} from "vue";
 import {useRouter} from "vue-router";
 
 import * as api from "../api";
+import Loading from "@/components/Loading.vue";
 
 const form = ref({ name: "", description: "", instructions: "" })
+const loading = ref(false);
 
 const router = useRouter();
 
@@ -14,7 +16,9 @@ async function submitForm() {
     return;
   }
 
+  loading.value = true;
   const subject = await api.createSubject(form.value.name, form.value.description, form.value.instructions);
+  loading.value = false;
   await router.push({name: "subject", params: {subjectId: subject.subjectId}});
 }
 </script>
@@ -34,6 +38,7 @@ async function submitForm() {
       <v-textarea label="Instructions" v-model="form.instructions" :rules="[() => !!form.instructions || 'This field is required.']"></v-textarea>
       <v-btn block type="submit">Submit</v-btn>
     </v-form>
+    <Loading :show="loading" />
   </main>
 </template>
 

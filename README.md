@@ -1,8 +1,12 @@
+QuizGPT uses OpenAI's GPT models to create and grade quizzes on topics of your choice.
+
+## Development
 To run the backend server:
 
 ```shell
 $ cd backend
 $ source .venv/bin/activate
+$ export OPENAI_API_KEY=...
 $ uvicorn main:app --reload --port 5757
 ```
 
@@ -24,4 +28,4 @@ $ cd ../frontend
 $ npm install
 ```
 
-The project is developed with Python 3.11 and Node 20.8. Older versions not guaranteed to work.
+The project is developed with Python 3.11 and Node 20.8. Older versions may not work.

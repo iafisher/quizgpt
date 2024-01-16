@@ -2,11 +2,15 @@
 import { onMounted, ref } from 'vue';
 
 import * as api from '../api';
+import Loading from "@/components/Loading.vue";
 
 const subjects = ref<api.Subject[]>([]);
+const loading = ref(false);
 
 onMounted(async () => {
+  loading.value = true;
   subjects.value = await api.getSubjectList();
+  loading.value = false;
 });
 </script>
 
@@ -25,6 +29,7 @@ onMounted(async () => {
         Create your own
       </v-card-title>
     </v-card>
+    <Loading :show="loading" />
   </main>
 </template>
 
