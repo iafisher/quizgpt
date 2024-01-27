@@ -1,4 +1,5 @@
 import argparse
+import pprint
 
 import storage
 from main import subject_to_json
@@ -24,16 +25,22 @@ def create_data(db):
     db_subject = storage.Subject(
         name="Postwar American history",
         description="The domestic history of the United States from 1945 to 1990",
-        instructions="Ask me questions about the domestic history of the US from 1945 to 1990."
     )
     db.add(db_subject)
+    db.add(
+        storage.Question(
+            text="Who was the Republican candidate for president in 1960?",
+            rephrase=True,
+            subject=db_subject,
+        )
+    )
     db.commit()
 
 
 def print_data(db):
     subject_list = db.query(storage.Subject).all()
     for subject in subject_list:
-        print(subject_to_json(subject))
+        pprint.pprint(subject_to_json(subject))
 
     if len(subject_list) > 0:
         print()

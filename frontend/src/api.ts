@@ -8,6 +8,11 @@ export interface Subject {
     description: string;
 }
 
+export interface Question {
+    text: string;
+    rephrase: boolean;
+}
+
 // TODO: make port configurable
 const BACKEND_URL = "http://localhost:5757";
 
@@ -23,9 +28,9 @@ export async function getSubject(subjectId: IdType): Promise<Subject> {
     return response.data;
 }
 
-export async function createSubject(name: string, description: string, instructions: string): Promise<Subject> {
+export async function createSubject(name: string, description: string, questions: Question[]): Promise<Subject> {
     // TODO: handle API error
-    const response = await axios.post(BACKEND_URL + "/subjects/create", {name, description, instructions});
+    const response = await axios.post(BACKEND_URL + "/subjects/create", {name, description, questions});
     return response.data.created;
 }
 

@@ -72,8 +72,7 @@ def generate_quiz(request: QuizGenerate, db: Session = Depends(get_db)):
         .filter(storage.Subject.subject_id == request.subject_id)
         .first()
     )
-    questions = quiz_service.generate(db_subject.instructions)
-    return dict(questions=[dict(text=text) for text in questions])
+    return dict(questions=[question_to_json(q) for q in db_subject.questions])
 
 
 class QuizGrade(BaseModel):
@@ -101,5 +100,13 @@ def subject_to_json(subject) -> dict:
         subjectId=subject.subject_id,
         name=subject.name,
         description=subject.description,
-        instructions=subject.instructions,
+        questions=[question_to_json(q) for q in subject.questions],
+    )
+
+
+def question_to_json(question) -> dict:
+    return dict(
+        questionId=question.question_id,
+        text=question.text,
+        rephrase=question.rephrase,
     )
