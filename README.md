@@ -1,5 +1,8 @@
 QuizGPT uses OpenAI's GPT models to create and grade quizzes on topics of your choice.
 
+## CLI
+Install requirements from `cli/requirements.txt`, then run `cli/main.py`.
+
 ## Development
 To run the backend server:
 
