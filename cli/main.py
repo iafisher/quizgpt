@@ -36,14 +36,23 @@ def create_subject():
         storage.create_subject(session, subject_name)
 
 
+@group.command("export")
+def export_data():
+    """Export the database to JSON."""
+    with storage.new_session() as session:
+        export = storage.export_to_json(session)
+        export_dict = export.model_dump()
+        print(json.dumps(export_dict))
+
+
 @group.command("import")
 @click.argument("input", type=click.File("r"))
-def import_subject(input: click.File):
-    """Import a subject and questions into the database."""
+def import_data(input: click.File):
+    """Import subjects and questions into the database."""
     data = json.load(input)
 
     with storage.new_session() as session:
-        storage.import_json(session, data)
+        storage.import_from_json(session, data)
 
 
 @group.command("list")
@@ -58,7 +67,7 @@ def list_subjects():
 
         for subject in subject_list:
             print(
-                f"{subject.subject_id:>6}  {subject.name} ({pluralize(len(subject.questions), 'question')})"
+                f"{subject.subject_id:>6}  {subject.name:<50}  ({pluralize(len(subject.questions), 'question')})"
             )
 
         print()

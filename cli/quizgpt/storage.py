@@ -145,7 +145,9 @@ def create_subject(session: Session, subject_name: str) -> None:
 
 
 def search_questions(session: Session, term: str) -> List[Question]:
-    stored_questions = session.scalars(select(StoredQuestion).where(StoredQuestion.text.ilike(f"%{term}%")))
+    stored_questions = session.scalars(
+        select(StoredQuestion).where(StoredQuestion.text.ilike(f"%{term}%"))
+    )
     return [q.to_dataclass() for q in stored_questions]
 
 
@@ -153,24 +155,29 @@ class ImportQuestion(pydantic.BaseModel):
     text: str
 
 
-class Import(pydantic.BaseModel):
+class ImportSubject(pydantic.BaseModel):
     name: str
     questions: List[ImportQuestion]
 
 
-def import_json(session: Session, data: dict) -> None:
+class Import(pydantic.BaseModel):
+    subjects: List[ImportSubject]
+
+
+def import_from_json(session: Session, data: dict) -> None:
     try:
         validated_data = Import(**data)
     except pydantic.ValidationError:
         # TODO: surface detailed pydantic errors
         raise QuizGptException("The import file did not match the expected schema.")
 
-    questions_to_add = [
-        StoredQuestion(text=import_question.text)
-        for import_question in validated_data.questions
-    ]
-    subject = StoredSubject(name=validated_data.name, questions=questions_to_add)
-    session.add(subject)
+    for import_subject in validated_data.subjects:
+        questions_to_add = [
+            StoredQuestion(text=import_question.text)
+            for import_question in import_subject.questions
+        ]
+        subject = StoredSubject(name=import_subject.name, questions=questions_to_add)
+        session.add(subject)
 
     try:
         session.commit()
@@ -178,3 +185,18 @@ def import_json(session: Session, data: dict) -> None:
         raise QuizGptException(
             "Unable to import the data into the database. Does a subject of the same name already exist?"
         )
+
+
+def export_to_json(session: Session) -> Import:
+    subjects = fetch_all_subjects(session)
+    return Import(
+        subjects=[
+            ImportSubject(
+                name=subject.name,
+                questions=[
+                    ImportQuestion(text=question.text) for question in subject.questions
+                ],
+            )
+            for subject in subjects
+        ]
+    )
