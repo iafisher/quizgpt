@@ -82,12 +82,22 @@ def recreate_db():
     Base.metadata.create_all(engine)
 
 
-def fetch_subject(session: Session, name: str) -> Subject:
+def fetch_subject_by_name(session: Session, name: str) -> Subject:
     stmt = select(StoredSubject).where(StoredSubject.name == name)
     try:
         subject = session.scalars(stmt).one()
     except sqlalchemy.exc.NoResultFound:
         raise QuizGptException(f"No subject named {name!r} found.")
+
+    return subject.to_dataclass()
+
+
+def fetch_subject_by_id(session: Session, subject_id: int) -> Subject:
+    stmt = select(StoredSubject).where(StoredSubject.subject_id == subject_id)
+    try:
+        subject = session.scalars(stmt).one()
+    except sqlalchemy.exc.NoResultFound:
+        raise QuizGptException(f"No subject {subject_id} not found.")
 
     return subject.to_dataclass()
 

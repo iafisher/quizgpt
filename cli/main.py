@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import json
+import readline
 from typing import Optional
 
 import click
@@ -51,7 +52,9 @@ def list_subjects():
             return
 
         for subject in subject_list:
-            print(f"{subject.name} ({pluralize(len(subject.questions), 'question')})")
+            print(
+                f"{subject.subject_id:>6}  {subject.name} ({pluralize(len(subject.questions), 'question')})"
+            )
 
         print()
         print(f"{pluralize(len(subject_list), 'subject')} in database.")
@@ -73,7 +76,9 @@ def search_questions(term: str):
         search_results = storage.search_questions(session, term)
         if search_results:
             for question in search_results:
-                print(f"{question.question_id:>6}  {question.text}  (subject: {question.subject_name})")
+                print(
+                    f"{question.question_id:>6}  {question.text}  (subject: {question.subject_name})"
+                )
         else:
             print("No results found.")
 
@@ -114,7 +119,15 @@ def get_subject(session: Session, subject_name: Optional[str]) -> Subject:
         print()
         return r
     else:
-        return storage.fetch_subject(session, subject_name)
+        try:
+            subject_id = int(subject_name)
+        except ValueError:
+            return storage.fetch_subject_by_name(session, subject_name)
+        else:
+            subject = storage.fetch_subject_by_id(session, subject_id)
+            print(f"Subject {subject.name!r} selected.")
+            print()
+            return subject
 
 
 if __name__ == "__main__":
