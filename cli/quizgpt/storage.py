@@ -26,10 +26,7 @@ class StoredSubject(Base):
         return Subject(
             subject_id=self.subject_id,
             name=self.name,
-            questions=[
-                Question(question_id=question.question_id, text=question.text)
-                for question in self.questions
-            ],
+            questions=[question.to_dataclass() for question in self.questions],
         )
 
 
@@ -37,10 +34,16 @@ class StoredQuestion(Base):
     __tablename__ = "question"
 
     question_id: Mapped[int] = mapped_column(primary_key=True)
+    # TODO: specify on_delete behavior of foreign-key fields
     subject_id: Mapped[int] = mapped_column(ForeignKey("subject.subject_id"))
     text: Mapped[str] = mapped_column(String)
 
     subject: Mapped["StoredSubject"] = relationship(back_populates="questions")
+
+    def to_dataclass(self) -> Question:
+        return Question(
+            subject_name=self.subject.name, question_id=self.question_id, text=self.text
+        )
 
 
 class StoredQuizResult(Base):
@@ -109,6 +112,7 @@ def save_quiz_result(
             StoredQuestionResult(question=question.text, answer=answer, grade=grade)
         )
 
+    # TODO: do I need to call session.begin() to open a transaction?
     quiz_result = StoredQuizResult(
         subject_id=subject_id,
         question_results=question_results_to_add,
@@ -116,6 +120,23 @@ def save_quiz_result(
     )
     session.add(quiz_result)
     session.commit()
+
+
+def create_question(session: Session, subject_id: int, text: str) -> None:
+    question = StoredQuestion(subject_id=subject_id, text=text)
+    session.add(question)
+    session.commit()
+
+
+def create_subject(session: Session, subject_name: str) -> None:
+    subject = StoredSubject(name=subject_name)
+    session.add(subject)
+    session.commit()
+
+
+def search_questions(session: Session, term: str) -> List[Question]:
+    stored_questions = session.scalars(select(StoredQuestion).where(StoredQuestion.text.ilike(f"%{term}%")))
+    return [q.to_dataclass() for q in stored_questions]
 
 
 class ImportQuestion(pydantic.BaseModel):

@@ -4,6 +4,7 @@ from typing import List, Optional
 
 @dataclass
 class Question:
+    subject_name: str
     question_id: int
     text: str
 

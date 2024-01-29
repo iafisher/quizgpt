@@ -3,10 +3,11 @@ import json
 from typing import Optional
 
 import click
+from sqlalchemy.orm import Session
 
 from quizgpt import cli, gpt, repetition, storage
 from quizgpt.cli import pluralize
-from quizgpt.types import QuizGptException
+from quizgpt.types import QuizGptException, Subject
 
 
 @click.group()
@@ -14,16 +15,21 @@ def group():
     pass
 
 
+@group.command("add")
+@click.argument("subject", required=False)
+def add_question(subject: Optional[str]):
+    with storage.new_session() as session:
+        subject_obj = get_subject(session, subject)
+
+        text = input("Enter the question text: ").strip()
+        storage.create_question(session, subject_obj.subject_id, text)
+
+
 @group.command("create")
-@click.argument("subject")
-def create_subject(subject: str):
-    raise NotImplementedError
-
-
-@group.command("edit")
-@click.argument("subject")
-def edit_subject(subject: str):
-    raise NotImplementedError
+def create_subject():
+    subject_name = input("Enter the name of the subject: ").strip()
+    with storage.new_session() as session:
+        storage.create_subject(session, subject_name)
 
 
 @group.command("import")
@@ -60,6 +66,18 @@ def recreate_db():
     storage.recreate_db()
 
 
+@group.command("search")
+@click.argument("term")
+def search_questions(term: str):
+    with storage.new_session() as session:
+        search_results = storage.search_questions(session, term)
+        if search_results:
+            for question in search_results:
+                print(f"{question.question_id:>6}  {question.text}  (subject: {question.subject_name})")
+        else:
+            print("No results found.")
+
+
 @group.command("take")
 @click.argument("subject", required=False)
 @click.option("-n", type=int, default=5)
@@ -67,13 +85,7 @@ def take_quiz(subject: Optional[str], n: int):
     gpt.precheck()
 
     with storage.new_session() as session:
-        if subject is None:
-            subject_list = storage.fetch_all_subjects(session)
-            subject_obj = cli.select(subject_list, key=lambda x: x.name)
-            print()
-            print()
-        else:
-            subject_obj = storage.fetch_subject(session, subject)
+        subject_obj = get_subject(session, subject)
 
         questions = repetition.select_questions(subject_obj.questions, n)
         answers = []
@@ -84,12 +96,25 @@ def take_quiz(subject: Optional[str], n: int):
 
         # TODO: display timing data
         grades = gpt.grade(subject_obj.name, questions, answers)
-        storage.save_quiz_result(session, subject_obj.subject_id, questions, answers, grades)
+        storage.save_quiz_result(
+            session, subject_obj.subject_id, questions, answers, grades
+        )
 
         for question, answer, grade in zip(questions, answers, grades):
             print()
             print()
             cli.print_grade(question, answer, grade)
+
+
+def get_subject(session: Session, subject_name: Optional[str]) -> Subject:
+    if subject_name is None:
+        subject_list = storage.fetch_all_subjects(session)
+        r = cli.select(subject_list, key=lambda x: x.name)
+        print()
+        print()
+        return r
+    else:
+        return storage.fetch_subject(session, subject_name)
 
 
 if __name__ == "__main__":
