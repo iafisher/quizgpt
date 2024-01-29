@@ -3,11 +3,12 @@ from typing import List
 
 from openai import OpenAI
 
-from .types import Question
+from .types import Question, QuizGptException
 
 
 def precheck() -> None:
-    assert "OPENAI_API_KEY" in os.environ
+    if "OPENAI_API_KEY" not in os.environ:
+        raise QuizGptException("OPENAI_API_KEY environment variable must be set.")
 
 
 def grade(subject: str, questions: List[Question], answers: List[str]) -> List[str]:

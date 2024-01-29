@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import json
 import readline
+import sys
 from typing import Optional
 
 import click
@@ -19,6 +20,7 @@ def group():
 @group.command("add")
 @click.argument("subject", required=False)
 def add_question(subject: Optional[str]):
+    """Add a question to an existing subject."""
     with storage.new_session() as session:
         subject_obj = get_subject(session, subject)
 
@@ -28,6 +30,7 @@ def add_question(subject: Optional[str]):
 
 @group.command("create")
 def create_subject():
+    """Create a new subject."""
     subject_name = input("Enter the name of the subject: ").strip()
     with storage.new_session() as session:
         storage.create_subject(session, subject_name)
@@ -36,6 +39,7 @@ def create_subject():
 @group.command("import")
 @click.argument("input", type=click.File("r"))
 def import_subject(input: click.File):
+    """Import a subject and questions into the database."""
     data = json.load(input)
 
     with storage.new_session() as session:
@@ -44,6 +48,7 @@ def import_subject(input: click.File):
 
 @group.command("list")
 def list_subjects():
+    """List subjects in the database."""
     with storage.new_session() as session:
         subject_list = storage.fetch_all_subjects(session)
 
@@ -62,6 +67,7 @@ def list_subjects():
 
 @group.command
 def recreate_db():
+    """Clear and recreate the database."""
     if not click.confirm("Re-create the database and delete all existing data? "):
         print("Aborted.")
         return
@@ -72,6 +78,7 @@ def recreate_db():
 @group.command("search")
 @click.argument("term")
 def search_questions(term: str):
+    """Search questions."""
     with storage.new_session() as session:
         search_results = storage.search_questions(session, term)
         if search_results:
@@ -87,6 +94,7 @@ def search_questions(term: str):
 @click.argument("subject", required=False)
 @click.option("-n", type=int, default=5)
 def take_quiz(subject: Optional[str], n: int):
+    """Take a quiz."""
     gpt.precheck()
 
     with storage.new_session() as session:
@@ -134,4 +142,5 @@ if __name__ == "__main__":
     try:
         group()
     except QuizGptException as e:
-        print(f"Error: {e}")
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
