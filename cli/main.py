@@ -62,7 +62,7 @@ def list_subjects():
 
 @group.command
 def recreate_db():
-    if not cli.confirm("Re-create the database and delete all existing data? "):
+    if not click.confirm("Re-create the database and delete all existing data? "):
         print("Aborted.")
         return
 

@@ -26,15 +26,6 @@ def _print_wrapped(s: str) -> None:
     print(textwrap.fill(s, width=columns))
 
 
-def confirm(prompt: str) -> bool:
-    while True:
-        response = input(prompt).strip().lower()
-        if response in ("y", "yes"):
-            return True
-        elif response in ("n", "no"):
-            return False
-
-
 def select(options: List[Any], *, key: Optional[callable] = None) -> Any:
     if key is None:
         key = lambda x: x
