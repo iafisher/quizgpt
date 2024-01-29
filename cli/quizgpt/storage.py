@@ -35,7 +35,11 @@ class StoredSubject(Base):
         return Subject(
             subject_id=self.subject_id,
             name=self.name,
-            questions=[question.to_dataclass() for question in self.questions],
+            questions=[
+                question.to_dataclass()
+                for question in self.questions
+                if not question.is_archived
+            ],
         )
 
 

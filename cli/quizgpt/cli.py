@@ -48,10 +48,12 @@ def select(options: List[Any], *, key: Optional[callable] = None) -> Any:
         return options[index]
 
 
-def print_question(question: Question) -> None:
-    print(
-        f"{question.question_id:>6}  {question.text}  (subject: {question.subject_name})"
-    )
+def print_question(question: Question, *, show_subject: bool = True) -> None:
+    print(f"{question.question_id:>6}  {question.text}", end="")
+    if show_subject:
+        print("  (subject: {question.subject_name})")
+    else:
+        print()
 
 
 def print_subject(subject: Subject) -> None:

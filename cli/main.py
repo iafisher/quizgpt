@@ -24,8 +24,15 @@ def add_question(subject: Optional[str]):
     with storage.new_session() as session:
         subject_obj = get_subject(session, subject)
 
-        text = input("Enter the question text: ").strip()
-        storage.create_question(session, subject_obj.subject_id, text)
+        while True:
+            text = input("Enter the question text: ").strip()
+            storage.create_question(session, subject_obj.subject_id, text)
+
+            print()
+            if not click.confirm("Add another?"):
+                break
+            else:
+                print()
 
 
 @group.command("archive")
@@ -47,7 +54,7 @@ def archive_question(question_id: int):
 
         cli.print_question(question)
         print()
-        if not click.confirm("Archive? "):
+        if not click.confirm("Archive?"):
             print("Aborted.")
             return
 
@@ -101,7 +108,7 @@ def list_subjects():
 @group.command
 def recreate_db():
     """Clear and recreate the database."""
-    if not click.confirm("Re-create the database and delete all existing data? "):
+    if not click.confirm("Re-create the database and delete all existing data?"):
         print("Aborted.")
         return
 
@@ -122,13 +129,13 @@ def search_questions(term: str):
 
 
 @group.command("show")
-@click.argument("subject")
-def show_subject(subject: str):
+@click.argument("subject", required=False)
+def show_subject(subject: Optional[str]):
     """Show a subject and its questions."""
     with storage.new_session() as session:
         subject_obj = get_subject(session, subject)
         for question in subject_obj.questions:
-            cli.print_question(question)
+            cli.print_question(question, show_subject=False)
 
 
 @group.command("take")
