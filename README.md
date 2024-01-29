@@ -22,7 +22,9 @@ $ quizgpt create
 $ quizgpt add
 ```
 
-## Development
+## Web interface
+*The web interface is under development and not yet completely functional.*
+
 To run the backend server:
 
 ```shell
