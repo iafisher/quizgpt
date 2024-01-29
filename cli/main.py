@@ -28,6 +28,32 @@ def add_question(subject: Optional[str]):
         storage.create_question(session, subject_obj.subject_id, text)
 
 
+@group.command("archive")
+@click.argument("subject")
+def archive_subject(subject: str):
+    """Archive a subject."""
+    with storage.new_session() as session:
+        subject_obj = get_subject(session, subject, silent=True)
+        storage.archive_subject(session, subject_obj.subject_id)
+        print(f"Archived subject {subject_obj.name!r}.")
+
+
+@group.command("archiveq")
+@click.argument("question_id", type=int)
+def archive_question(question_id: int):
+    """Archive a question."""
+    with storage.new_session() as session:
+        question = storage.fetch_question_by_id(session, question_id)
+
+        cli.print_question(question)
+        print()
+        if not click.confirm("Archive? "):
+            print("Aborted.")
+            return
+
+        storage.archive_question(session, question.question_id)
+
+
 @group.command("create")
 def create_subject():
     """Create a new subject."""
@@ -66,9 +92,7 @@ def list_subjects():
             return
 
         for subject in subject_list:
-            print(
-                f"{subject.subject_id:>6}  {subject.name:<50}  ({pluralize(len(subject.questions), 'question')})"
-            )
+            cli.print_subject(subject)
 
         print()
         print(f"{pluralize(len(subject_list), 'subject')} in database.")
@@ -92,11 +116,19 @@ def search_questions(term: str):
         search_results = storage.search_questions(session, term)
         if search_results:
             for question in search_results:
-                print(
-                    f"{question.question_id:>6}  {question.text}  (subject: {question.subject_name})"
-                )
+                cli.print_question(question)
         else:
             print("No results found.")
+
+
+@group.command("show")
+@click.argument("subject")
+def show_subject(subject: str):
+    """Show a subject and its questions."""
+    with storage.new_session() as session:
+        subject_obj = get_subject(session, subject)
+        for question in subject_obj.questions:
+            cli.print_question(question)
 
 
 @group.command("take")
@@ -128,7 +160,9 @@ def take_quiz(subject: Optional[str], n: int):
             cli.print_grade(question, answer, grade)
 
 
-def get_subject(session: Session, subject_name: Optional[str]) -> Subject:
+def get_subject(
+    session: Session, subject_name: Optional[str], *, silent: bool = False
+) -> Subject:
     if subject_name is None:
         subject_list = storage.fetch_all_subjects(session)
         r = cli.select(subject_list, key=lambda x: x.name)
@@ -142,8 +176,9 @@ def get_subject(session: Session, subject_name: Optional[str]) -> Subject:
             return storage.fetch_subject_by_name(session, subject_name)
         else:
             subject = storage.fetch_subject_by_id(session, subject_id)
-            print(f"Subject {subject.name!r} selected.")
-            print()
+            if not silent:
+                print(f"Subject {subject.name!r} selected.")
+                print()
             return subject
 
 

@@ -2,7 +2,7 @@ import shutil
 import textwrap
 from typing import Any, List, Optional
 
-from .types import Question
+from .types import Question, Subject
 
 
 def ask_question(index: int, question: Question) -> str:
@@ -46,6 +46,18 @@ def select(options: List[Any], *, key: Optional[callable] = None) -> Any:
             continue
 
         return options[index]
+
+
+def print_question(question: Question) -> None:
+    print(
+        f"{question.question_id:>6}  {question.text}  (subject: {question.subject_name})"
+    )
+
+
+def print_subject(subject: Subject) -> None:
+    print(
+        f"{subject.subject_id:>6}  {subject.name:<50}  ({pluralize(len(subject.questions), 'question')})"
+    )
 
 
 def pluralize(n: int, word: str, plural: Optional[str] = None) -> str:

@@ -4,7 +4,15 @@ from typing import List
 
 import pydantic
 import sqlalchemy.exc
-from sqlalchemy import ForeignKey, Integer, String, create_engine, select
+from sqlalchemy import (
+    Boolean,
+    ForeignKey,
+    Integer,
+    String,
+    create_engine,
+    select,
+    update,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
 
 from .types import Question, QuizGptException, Subject
@@ -19,6 +27,7 @@ class StoredSubject(Base):
 
     subject_id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String, unique=True)
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
 
     questions: Mapped[List["StoredQuestion"]] = relationship(back_populates="subject")
 
@@ -37,6 +46,7 @@ class StoredQuestion(Base):
     # TODO: specify on_delete behavior of foreign-key fields
     subject_id: Mapped[int] = mapped_column(ForeignKey("subject.subject_id"))
     text: Mapped[str] = mapped_column(String)
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
 
     subject: Mapped["StoredSubject"] = relationship(back_populates="questions")
 
@@ -83,28 +93,48 @@ def recreate_db():
 
 
 def fetch_subject_by_name(session: Session, name: str) -> Subject:
-    stmt = select(StoredSubject).where(StoredSubject.name == name)
+    stmt = select(StoredSubject).where(
+        StoredSubject.name == name, StoredSubject.is_archived == False
+    )
     try:
         subject = session.scalars(stmt).one()
     except sqlalchemy.exc.NoResultFound:
-        raise QuizGptException(f"No subject named {name!r} found.")
+        raise QuizGptException(f"Subject named {name!r} not found.")
 
     return subject.to_dataclass()
 
 
 def fetch_subject_by_id(session: Session, subject_id: int) -> Subject:
-    stmt = select(StoredSubject).where(StoredSubject.subject_id == subject_id)
+    stmt = select(StoredSubject).where(
+        StoredSubject.subject_id == subject_id, StoredSubject.is_archived == False
+    )
     try:
         subject = session.scalars(stmt).one()
     except sqlalchemy.exc.NoResultFound:
-        raise QuizGptException(f"No subject {subject_id} not found.")
+        raise QuizGptException(f"Subject {subject_id} not found.")
 
     return subject.to_dataclass()
 
 
 def fetch_all_subjects(session: Session) -> List[Subject]:
-    subject_list = session.scalars(select(StoredSubject).order_by(StoredSubject.name))
+    subject_list = session.scalars(
+        select(StoredSubject)
+        .where(StoredSubject.is_archived == False)
+        .order_by(StoredSubject.name)
+    )
     return [subject.to_dataclass() for subject in subject_list]
+
+
+def fetch_question_by_id(session: Session, question_id: int) -> Question:
+    stmt = select(StoredQuestion).where(
+        StoredQuestion.question_id == question_id, StoredQuestion.is_archived == False
+    )
+    try:
+        question = session.scalars(stmt).one()
+    except sqlalchemy.exc.NoResultFound:
+        raise QuizGptException(f"Question {question_id} not found.")
+
+    return question.to_dataclass()
 
 
 def save_quiz_result(
@@ -144,9 +174,31 @@ def create_subject(session: Session, subject_name: str) -> None:
     session.commit()
 
 
+def archive_subject(session: Session, subject_id: int) -> None:
+    stmt = (
+        update(StoredSubject)
+        .where(StoredSubject.subject_id == subject_id)
+        .values(is_archived=True)
+    )
+    session.execute(stmt)
+    session.commit()
+
+
+def archive_question(session: Session, question_id: int) -> None:
+    stmt = (
+        update(StoredQuestion)
+        .where(StoredQuestion.question_id == question_id)
+        .values(is_archived=True)
+    )
+    session.execute(stmt)
+    session.commit()
+
+
 def search_questions(session: Session, term: str) -> List[Question]:
     stored_questions = session.scalars(
-        select(StoredQuestion).where(StoredQuestion.text.ilike(f"%{term}%"))
+        select(StoredQuestion).where(
+            StoredQuestion.text.ilike(f"%{term}%"), StoredQuestion.is_archived == False
+        )
     )
     return [q.to_dataclass() for q in stored_questions]
 
