@@ -1,8 +1,10 @@
+import math
+import time
 from typing import List
 
 import pydantic
 import sqlalchemy.exc
-from sqlalchemy import ForeignKey, String, create_engine, select
+from sqlalchemy import ForeignKey, Integer, String, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
 
 from .types import Question, QuizGptException, Subject
@@ -41,10 +43,40 @@ class StoredQuestion(Base):
     subject: Mapped["StoredSubject"] = relationship(back_populates="questions")
 
 
+class StoredQuizResult(Base):
+    __tablename__ = "quiz_result"
+
+    quiz_result_id: Mapped[int] = mapped_column(primary_key=True)
+    subject_id: Mapped[int] = mapped_column(ForeignKey("subject.subject_id"))
+    time_finished_secs: Mapped[int] = mapped_column(Integer)
+
+    question_results: Mapped[List["StoredQuestionResult"]] = relationship()
+
+
+class StoredQuestionResult(Base):
+    __tablename__ = "question_result"
+
+    question_result_id: Mapped[int] = mapped_column(primary_key=True)
+    quiz_result: Mapped[int] = mapped_column(ForeignKey("quiz_result.quiz_result_id"))
+    question: Mapped[str] = mapped_column(String)
+    answer: Mapped[str] = mapped_column(String)
+    grade: Mapped[str] = mapped_column(String)
+
+
+# TODO: make configurable
+DB_PATH = "sqlite:///quizgpt.sqlite3"
+
+
 def new_session():
-    engine = create_engine("sqlite:///quizgpt.sqlite3")
+    engine = create_engine(DB_PATH)
     Base.metadata.create_all(engine)
     return Session(engine)
+
+
+def recreate_db():
+    engine = create_engine(DB_PATH)
+    Base.metadata.drop_all(engine)
+    Base.metadata.create_all(engine)
 
 
 def fetch_subject(session: Session, name: str) -> Subject:
@@ -60,6 +92,30 @@ def fetch_subject(session: Session, name: str) -> Subject:
 def fetch_all_subjects(session: Session) -> List[Subject]:
     subject_list = session.scalars(select(StoredSubject).order_by(StoredSubject.name))
     return [subject.to_dataclass() for subject in subject_list]
+
+
+def save_quiz_result(
+    session: Session,
+    subject_id: int,
+    questions: List[Question],
+    answers: List[str],
+    grades: List[str],
+) -> None:
+    time_finished_secs = math.floor(time.time())
+
+    question_results_to_add = []
+    for question, answer, grade in zip(questions, answers, grades):
+        question_results_to_add.append(
+            StoredQuestionResult(question=question.text, answer=answer, grade=grade)
+        )
+
+    quiz_result = StoredQuizResult(
+        subject_id=subject_id,
+        question_results=question_results_to_add,
+        time_finished_secs=time_finished_secs,
+    )
+    session.add(quiz_result)
+    session.commit()
 
 
 class ImportQuestion(pydantic.BaseModel):

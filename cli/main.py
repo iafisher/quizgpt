@@ -51,6 +51,15 @@ def list_subjects():
         print(f"{pluralize(len(subject_list), 'subject')} in database.")
 
 
+@group.command
+def recreate_db():
+    if not cli.confirm("Re-create the database and delete all existing data? "):
+        print("Aborted.")
+        return
+
+    storage.recreate_db()
+
+
 @group.command("take")
 @click.argument("subject", required=False)
 @click.option("-n", type=int, default=5)
@@ -75,6 +84,8 @@ def take_quiz(subject: Optional[str], n: int):
 
         # TODO: display timing data
         grades = gpt.grade(subject_obj.name, questions, answers)
+        storage.save_quiz_result(session, subject_obj.subject_id, questions, answers, grades)
+
         for question, answer, grade in zip(questions, answers, grades):
             print()
             print()
