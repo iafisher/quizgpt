@@ -1,7 +1,26 @@
 QuizGPT uses OpenAI's GPT models to create and grade quizzes on topics of your choice.
 
 ## CLI
-Install requirements from `cli/requirements.txt`, then run `cli/main.py`.
+```shell
+# Set-up
+$ cd cli
+$ pip install -r requirements.txt
+$ export OPENAI_API_KEY=..
+$ alias quizgpt='python main.py'
+
+# Import a quiz
+$ quizgpt import samples/postwar-us-history.json
+$ quizgpt list
+     1  Post-war United States history                      (5 questions)
+
+# Take a quiz
+$ quizgpt take
+
+# Create your own subject
+$ quizgpt create
+# Add questions
+$ quizgpt add
+```
 
 ## Development
 To run the backend server:
