@@ -41,6 +41,12 @@ def archive_subject(subject: str):
     """Archive a subject."""
     with storage.new_session() as session:
         subject_obj = get_subject(session, subject, silent=True)
+        cli.print_subject(subject_obj)
+        print()
+        if not click.confirm("Archive?"):
+            print("Aborted.")
+            return
+
         storage.archive_subject(session, subject_obj.subject_id)
         print(f"Archived subject {subject_obj.name!r}.")
 

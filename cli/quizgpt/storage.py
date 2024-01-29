@@ -156,7 +156,6 @@ def save_quiz_result(
             StoredQuestionResult(question=question.text, answer=answer, grade=grade)
         )
 
-    # TODO: do I need to call session.begin() to open a transaction?
     quiz_result = StoredQuizResult(
         subject_id=subject_id,
         question_results=question_results_to_add,
