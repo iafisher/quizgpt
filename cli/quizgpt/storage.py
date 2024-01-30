@@ -26,8 +26,8 @@ class StoredSubject(Base):
     __tablename__ = "subject"
 
     subject_id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String, unique=True)
-    is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     questions: Mapped[List["StoredQuestion"]] = relationship(back_populates="subject")
 
@@ -49,17 +49,21 @@ class StoredQuestion(Base):
     question_id: Mapped[int] = mapped_column(primary_key=True)
     # TODO: specify on_delete behavior of foreign-key fields
     subject_id: Mapped[int] = mapped_column(ForeignKey("subject.subject_id"))
-    text: Mapped[str] = mapped_column(String)
-    is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    text: Mapped[str] = mapped_column(String, nullable=False)
+    answer: Mapped[str] = mapped_column(String, default="", nullable=False)
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     subject: Mapped["StoredSubject"] = relationship(back_populates="questions")
-    variants: Mapped[List["StoredQuestionVariant"]] = relationship(back_populates="question")
+    variants: Mapped[List["StoredQuestionVariant"]] = relationship(
+        back_populates="question"
+    )
 
     def to_dataclass(self) -> Question:
         return Question(
             subject_name=self.subject.name,
             question_id=self.question_id,
             text=self.text,
+            answer=self.answer,
             variants=self.variants,
         )
 
@@ -69,7 +73,7 @@ class StoredQuestionVariant(Base):
 
     variant_id: Mapped[int] = mapped_column(primary_key=True)
     question_id: Mapped[int] = mapped_column(ForeignKey("question.question_id"))
-    text: Mapped[str] = mapped_column(String)
+    text: Mapped[str] = mapped_column(String, nullable=False)
 
     question: Mapped["StoredQuestion"] = relationship(back_populates="variants")
 
@@ -79,7 +83,7 @@ class StoredQuizResult(Base):
 
     quiz_result_id: Mapped[int] = mapped_column(primary_key=True)
     subject_id: Mapped[int] = mapped_column(ForeignKey("subject.subject_id"))
-    time_finished_secs: Mapped[int] = mapped_column(Integer)
+    time_finished_secs: Mapped[int] = mapped_column(Integer, nullable=False)
 
     question_results: Mapped[List["StoredQuestionResult"]] = relationship()
 
@@ -89,9 +93,9 @@ class StoredQuestionResult(Base):
 
     question_result_id: Mapped[int] = mapped_column(primary_key=True)
     quiz_result: Mapped[int] = mapped_column(ForeignKey("quiz_result.quiz_result_id"))
-    question: Mapped[str] = mapped_column(String)
-    answer: Mapped[str] = mapped_column(String)
-    grade: Mapped[str] = mapped_column(String)
+    question: Mapped[str] = mapped_column(String, nullable=False)
+    answer: Mapped[str] = mapped_column(String, nullable=False)
+    grade: Mapped[str] = mapped_column(String, nullable=False)
 
 
 # TODO: make configurable
@@ -179,9 +183,13 @@ def save_quiz_result(
     session.commit()
 
 
-def create_question(session: Session, subject_id: int, text: str, variants: List[str]) -> None:
+def create_question(
+    session: Session, subject_id: int, text: str, answer: str, variants: List[str]
+) -> None:
     stored_variants = [StoredQuestionVariant(text=variant) for variant in variants]
-    question = StoredQuestion(subject_id=subject_id, text=text, variants=stored_variants)
+    question = StoredQuestion(
+        subject_id=subject_id, text=text, answer=answer, variants=stored_variants
+    )
     session.add(question)
     session.commit()
 
@@ -223,6 +231,7 @@ def search_questions(session: Session, term: str) -> List[Question]:
 
 class ImportQuestion(pydantic.BaseModel):
     text: str
+    answer: str
     variants: List[str]
 
 
@@ -250,7 +259,9 @@ def import_from_json(session: Session, data: dict) -> None:
                 for variant in import_question.variants
             ]
             question = StoredQuestion(
-                text=import_question.text, variants=variants_to_add
+                text=import_question.text,
+                answer=import_question.answer,
+                variants=variants_to_add,
             )
             questions_to_add.append(question)
 
@@ -274,6 +285,7 @@ def export_to_json(session: Session) -> Import:
                 questions=[
                     ImportQuestion(
                         text=question.text,
+                        answer=question.answer,
                         variants=[variant.text for variant in question.variants],
                     )
                     for question in subject.questions

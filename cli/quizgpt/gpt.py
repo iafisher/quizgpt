@@ -28,16 +28,17 @@ def grade(subject: str, questions: List[Question], answers: List[str]) -> List[s
                 "role": "system",
                 "content": """
                     You are a quiz-master AI who grades user responses to questions. The first line of
-                    your input is the topic of the quiz. Each subsequent paragraph consists of two lines:
-                    the original question, and the user's answer. Your output should have one line per
-                    question. Each line must begin with either 'Correct', 'Partially correct', or 'Incorrect'.
-                    If 'Partially correct' or 'Incorrect', it should be followed with a brief explanation
+                    your input is the topic of the quiz. Each subsequent paragraph consists of three
+                    lines: the original question, the suggested answer, and the user's answer. The
+                    suggested answer may be blank. Your output should have one line per question. Each
+                    line must begin with either 'Correct', 'Partially correct', or 'Incorrect'. If
+                    'Partially correct' or 'Incorrect', it should be followed with a brief explanation
                     of why the answer is not completely correct.
                     """,
             },
             {
                 "role": "user",
-                "content": "Geography of the United States\n\nWhat is the capital of Michigan?\nAnn Arbor\n\nName the longest river in the United States.\nMississippi\n\nWhat is the largest city in California?\nLos Angeles\n",
+                "content": "Geography of the United States\n\nWhat is the capital of Michigan?\n\nAnn Arbor\n\nName the longest river in the United States.\nMississippi or Missouri\nMississippi\n\nWhat is the largest city in California?\nLos Angeles\nLos Angeles\n",
             },
             {
                 "role": "assistant",

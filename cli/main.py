@@ -26,6 +26,7 @@ def add_question(subject: Optional[str]):
 
         while True:
             text = input("Enter the question text: ").strip()
+            answer = input("Enter the question answer (ok to leave blank): ").strip()
             print()
 
             if click.confirm("Auto-generate variant wordings?"):
@@ -49,7 +50,7 @@ def add_question(subject: Optional[str]):
             else:
                 variants = []
 
-            storage.create_question(session, subject_obj.subject_id, text, variants)
+            storage.create_question(session, subject_obj.subject_id, text, answer, variants)
 
             print()
             if not click.confirm("Add another?"):
