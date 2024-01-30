@@ -53,11 +53,25 @@ class StoredQuestion(Base):
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
 
     subject: Mapped["StoredSubject"] = relationship(back_populates="questions")
+    variants: Mapped[List["StoredQuestionVariant"]] = relationship(back_populates="question")
 
     def to_dataclass(self) -> Question:
         return Question(
-            subject_name=self.subject.name, question_id=self.question_id, text=self.text
+            subject_name=self.subject.name,
+            question_id=self.question_id,
+            text=self.text,
+            variants=self.variants,
         )
+
+
+class StoredQuestionVariant(Base):
+    __tablename__ = "question_variant"
+
+    variant_id: Mapped[int] = mapped_column(primary_key=True)
+    question_id: Mapped[int] = mapped_column(ForeignKey("question.question_id"))
+    text: Mapped[str] = mapped_column(String)
+
+    question: Mapped["StoredQuestion"] = relationship(back_populates="variants")
 
 
 class StoredQuizResult(Base):
@@ -165,8 +179,9 @@ def save_quiz_result(
     session.commit()
 
 
-def create_question(session: Session, subject_id: int, text: str) -> None:
-    question = StoredQuestion(subject_id=subject_id, text=text)
+def create_question(session: Session, subject_id: int, text: str, variants: List[str]) -> None:
+    stored_variants = [StoredQuestionVariant(text=variant) for variant in variants]
+    question = StoredQuestion(subject_id=subject_id, text=text, variants=stored_variants)
     session.add(question)
     session.commit()
 
@@ -208,6 +223,7 @@ def search_questions(session: Session, term: str) -> List[Question]:
 
 class ImportQuestion(pydantic.BaseModel):
     text: str
+    variants: List[str]
 
 
 class ImportSubject(pydantic.BaseModel):
@@ -227,10 +243,17 @@ def import_from_json(session: Session, data: dict) -> None:
         raise QuizGptException("The import file did not match the expected schema.")
 
     for import_subject in validated_data.subjects:
-        questions_to_add = [
-            StoredQuestion(text=import_question.text)
-            for import_question in import_subject.questions
-        ]
+        questions_to_add = []
+        for import_question in import_subject.questions:
+            variants_to_add = [
+                StoredQuestionVariant(text=variant)
+                for variant in import_question.variants
+            ]
+            question = StoredQuestion(
+                text=import_question.text, variants=variants_to_add
+            )
+            questions_to_add.append(question)
+
         subject = StoredSubject(name=import_subject.name, questions=questions_to_add)
         session.add(subject)
 
@@ -249,7 +272,11 @@ def export_to_json(session: Session) -> Import:
             ImportSubject(
                 name=subject.name,
                 questions=[
-                    ImportQuestion(text=question.text) for question in subject.questions
+                    ImportQuestion(
+                        text=question.text,
+                        variants=[variant.text for variant in question.variants],
+                    )
+                    for question in subject.questions
                 ],
             )
             for subject in subjects

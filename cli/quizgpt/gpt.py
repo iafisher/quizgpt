@@ -51,3 +51,35 @@ def grade(subject: str, questions: List[Question], answers: List[str]) -> List[s
     )
     lines = response.choices[0].message.content.splitlines()
     return [line for line in lines if line]
+
+
+def create_variants(text: str) -> List[str]:
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "system",
+                "content": """
+                    You are a quiz-master AI who helps users create their own quizzes and study guides. You
+                    will be given the text of a question, and you should output 2 variants of the same
+                    question with different wording, each on their own line. Make them different enough to
+                    be distinctive, but don't change the meaning of the question.
+                    """,
+            },
+            {
+                "role": "user",
+                "content": "What American investor is known for managing Fidelity's Magellan Fund",
+            },
+            {
+                "role": "assistant",
+                "content": "Name the US investor who managed the Fidelty fund for Magellan.\nFidelity's Magellan Fund was managed by what investor?",
+            },
+            {
+                "role": "user",
+                "content": text,
+            },
+        ],
+    )
+    lines = response.choices[0].message.content.splitlines()
+    return [line for line in lines if line]

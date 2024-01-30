@@ -7,6 +7,7 @@ class Question:
     subject_name: str
     question_id: int
     text: str
+    variants: List[str]
 
 
 @dataclass

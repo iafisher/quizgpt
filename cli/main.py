@@ -26,7 +26,30 @@ def add_question(subject: Optional[str]):
 
         while True:
             text = input("Enter the question text: ").strip()
-            storage.create_question(session, subject_obj.subject_id, text)
+            print()
+
+            if click.confirm("Auto-generate variant wordings?"):
+                while True:
+                    variants = gpt.create_variants(text)
+                    print("\n".join(variants))
+                    print()
+                    selection_accept = "Accept variants."
+                    selection_generate = "Generate new ones."
+                    selection_skip = "Skip for this question."
+                    selection = cli.select([selection_accept, selection_generate, selection_skip])
+                    if selection == selection_accept:
+                        break
+                    elif selection == selection_generate:
+                        continue
+                    elif selection == selection_skip:
+                        variants = []
+                        break
+                    else:
+                        raise Exception("unreachable")
+            else:
+                variants = []
+
+            storage.create_question(session, subject_obj.subject_id, text, variants)
 
             print()
             if not click.confirm("Add another?"):

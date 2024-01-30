@@ -1,3 +1,4 @@
+import random
 import shutil
 import textwrap
 from typing import Any, List, Optional
@@ -6,7 +7,10 @@ from .types import Question, Subject
 
 
 def ask_question(index: int, question: Question) -> str:
-    _print_wrapped(f"{index:>3}. {question.text}")
+    text = random.choice(
+        [variant.text for variant in question.variants] + [question.text]
+    )
+    _print_wrapped(f"{index:>3}. {text}")
     print()
     response = input("   > ")
     print()
